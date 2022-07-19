@@ -61,7 +61,11 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
     MQTTClient_free(topicName);
 
     if (msgarray[0] == 'o' && msgarray[1] == 'n') {
-        digitalWrite(outpin, HIGH); //write to outpin
+        wiringPiSetupGpio(); //WringPi Initialization
+
+        pinMode(outpin, OUTPUT); //pin configuration
+
+        digitalWrite(outpin, LOW); //write to outpin
 
         printf("Switch is ON\n");
 
@@ -75,7 +79,11 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
         printf("Status Message Delivered\n");
     } 
     else if (msgarray[0] == 'o' && msgarray[1] == 'f' && msgarray[2] == 'f') {
-        digitalWrite(outpin, LOW); //write to outpin
+        wiringPiSetupGpio(); //WringPi Initialization
+
+        pinMode(outpin, OUTPUT); //pin configuration
+        
+        digitalWrite(outpin, HIGH); //write to outpin
 
         printf("Switch is OFF\n");
 
