@@ -1,16 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wiringPi.h>
+#include <wiringSerial.h>
 #include <string.h>
+#include <errno.h>
 #include <MQTTClient.h>
 
 #define ADDRESS "tcp://172.30.1.50:1883" //Broker IP Address
 #define ADDRESS_SECURE "tcp://172.30.1.50:8883" //Broker IP Address but with TLS encryption
 #define CLIENTID "CLIENT_SUB" //Client Name
-#define TOPIC_1 "lab/light" //Topic Configuration (Light)
-#define TOPIC_2 "light/stat" //Topic for current status of light
-#define PAYLOAD_1 "Switch is ON" //Defining message for status message publication
-#define PAYLOAD_2 "Switch is OFF"
+#define TOPIC_1 "car/control" //Topic Configuration (control)
 #define QOS 1 //QOS Configuration
 #define TIMEOUT 10000L //Timeout required for finishing comm
 
@@ -18,8 +17,6 @@ MQTTClient client; //Client handle
 MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
 MQTTClient_message pubmsg = MQTTClient_message_initializer; //variable for MQTT message
 MQTTClient_deliveryToken token;
-
-const int outpin = 23; // HIGH-LOW OUTPUT Pin - Broadcom pin 23, P1 pin 16
 
 volatile MQTTClient_deliveryToken deliveredtoken;
 
@@ -42,9 +39,17 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
     char* payloadptr;
     char msgarray[5];
 
-    wiringPiSetupGpio(); //WringPi Initialization
+    int serial_port ;
+    char dat;
+    if ((serial_port = serialOpen ("/dev/ttyUSB0", 9600)) < 0) {
+        fprintf (stderr, "Unable to open serial device: %s\n", strerror (errno)) ;
+        return 1 ;
+    }
 
-    pinMode(outpin, OUTPUT); //pin configuration
+    if (wiringPiSetup () == -1) {
+        fprintf (stdout, "Unable to start wiringPi: %s\n", strerror (errno)) ;
+        return 1 ;
+    }
 
     printf("Message arrived\n");
     printf("topic: %s\n", topicName);
@@ -62,42 +67,27 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
     MQTTClient_free(topicName);
     //frees memory allocated to received message
 
-    if (msgarray[0] == 'o' && msgarray[1] == 'n') {
-        wiringPiSetupGpio(); //WringPi Initialization
-
-        pinMode(outpin, OUTPUT); //pin configuration
-
-        digitalWrite(outpin, LOW); //write to outpin
-
-        printf("Switch is ON\n");
-
-        pubmsg.payload = PAYLOAD_1; //loads predefined payload(PAYLOAD_1, lab/light) to pubmsg
-        pubmsg.payloadlen = strlen(PAYLOAD_1); 
-        pubmsg.qos = QOS;
-        pubmsg.retained = 0;
-        deliveredtoken = 0;
-        MQTTClient_publishMessage(client, TOPIC_2, &pubmsg, &token); //publishes message to predefined topic(TOPIC_2, light/stat)
-        rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
-        printf("Status Message Delivered\n");
+    if (msgarray[0] == 'w') {
+        dat = 'w';
+        serialPutchar(serial_port, dat);
     } 
-    else if (msgarray[0] == 'o' && msgarray[1] == 'f' && msgarray[2] == 'f') {
-        wiringPiSetupGpio(); //WringPi Initialization
-
-        pinMode(outpin, OUTPUT); //pin configuration
-        
-        digitalWrite(outpin, HIGH); //write to outpin
-
-        printf("Switch is OFF\n");
-
-        pubmsg.payload = PAYLOAD_2;
-        pubmsg.payloadlen = strlen(PAYLOAD_2);
-        pubmsg.qos = QOS;
-        pubmsg.retained = 0;
-        deliveredtoken = 0;
-        MQTTClient_publishMessage(client, TOPIC_2, &pubmsg, &token);
-        rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
-        printf("Status Message Delivered\n");
+    else if (msgarray[0] == 'a') {
+        dat = 'a';
+        serialPutchar(serial_port, dat);
     }
+    else if (msgarray[0] == 's') {
+        dat = 's';
+        serialPutchar(serial_port, dat);
+    }
+    else if (msgarray[0] == 'd') {
+        dat = 'd';
+        serialPutchar(serial_port, dat);
+    }
+    else {
+        dat = 'r';
+        serialPutchar(serial_port, dat);
+    }
+
     return 1;
 }
 
@@ -118,7 +108,7 @@ int main(int argc, char* argv[]) {
     }
     printf("Subscribing to topic %s\nfor client %s using QoS%d\n", TOPIC_1, CLIENTID, QOS);
     MQTTClient_subscribe(client, TOPIC_1, QOS);
-    //subscribe for predefined topic (lab/light)
+    //subscribe for predefined topic
 
     do {
         ch = getchar();
