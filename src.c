@@ -41,7 +41,7 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
 
     int serial_port ;
     char dat;
-    if ((serial_port = serialOpen ("/dev/ttyUSB0", 9600)) < 0) {
+    if ((serial_port = serialOpen ("/dev/ttyUSB0", 115200)) < 0) {
         fprintf (stderr, "Unable to open serial device: %s\n", strerror (errno)) ;
         return 1 ;
     }
