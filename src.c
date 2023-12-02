@@ -67,19 +67,19 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
     MQTTClient_free(topicName);
     //frees memory allocated to received message
 
-    if (msgarray[0] == 'w') {
+    if (msgarray[0] == 'w' || msgarray[0] == 'W') {
         dat = 'w';
         serialPutchar(serial_port, dat);
     } 
-    else if (msgarray[0] == 'a') {
+    else if (msgarray[0] == 'a' || msgarray[0] == 'A') {
         dat = 'a';
         serialPutchar(serial_port, dat);
     }
-    else if (msgarray[0] == 's') {
+    else if (msgarray[0] == 's' || msgarray[0] == 'S') {
         dat = 's';
         serialPutchar(serial_port, dat);
     }
-    else if (msgarray[0] == 'd') {
+    else if (msgarray[0] == 'd' || msgarray[0] == 'D') {
         dat = 'd';
         serialPutchar(serial_port, dat);
     }
